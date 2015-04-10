@@ -13,7 +13,7 @@ var svg = d3.select('.canvas')
 
 var projection = d3.geo.mercator()
     .translate([width/2,height/2])
-    .scale(200);
+    .scale(270);
 
 var scaleSize = d3.scale.sqrt().range([10,50]);
 
@@ -22,6 +22,7 @@ var force = d3.layout.force()
     .charge(0)
     .gravity(0);
 
+var dispatch = d3.dispatch('enter','yearChange','leave');
 
 d3.csv('data/world.csv',parse,function(err,world){
 
@@ -50,6 +51,24 @@ d3.csv('data/world.csv',parse,function(err,world){
         .append('g')
         .attr('class','country');
 
+    var nameText = svg.append('text')
+        .attr('class','name')
+        .attr('y',height)
+        .attr('text-anchor','middle')
+        .attr('dy',16);
+
+    svg.append('rect')
+        .attr('width',width)
+        .attr('height',height)
+        .style('fill-opacity',0)
+        .on('mouseenter',function(d){ dispatch.enter(); })
+        .on('mousemove',function(d) {
+            var xy = d3.mouse(this)
+        })
+        .on('mouseleave',function(d){
+            dispatch.leave();
+        });
+
     countries
         .attr('transform',function(d){
             return 'translate('+ d.x+','+ d.y+')';
@@ -64,6 +83,13 @@ d3.csv('data/world.csv',parse,function(err,world){
         .nodes(nodesArray)
         .on('tick',onTick)
         .start();
+
+    dispatch.on('enter.', function(){
+        nameText.style('visibility','visible');
+    });
+    dispatch.on('leave.', function(){
+        nameText.style('visibility','hidden');
+    });
 
     function onTick(e){
         countries.each(gravity(e.alpha * .1))
